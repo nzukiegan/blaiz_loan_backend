@@ -56,7 +56,7 @@ router.get('/api/loans/client/:client_id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { client_id, clientName, amount, interestRate, term, term_unit, installment_frequency, remainingBalance, dueDate } = req.body;
+    const { client_id, clientName, amount, interestRate, term, term_unit, installment_frequency, penalty_rate, remainingBalance, dueDate } = req.body;
     
     if (!client_id || !amount || !interestRate || !term) {
       return res.status(400).json({ 
@@ -74,8 +74,8 @@ router.post('/', async (req, res) => {
     }
 
     const result = await db.query(
-      'INSERT INTO loans (client_id, client_name, amount, interest_rate, term, term_unit, installment_frequency, remaining_balance, due_date, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-      [client_id, clientName, amount, interestRate, term, term_unit, installment_frequency, remainingBalance, dueDate, 'pending']
+      'INSERT INTO loans (client_id, client_name, amount, interest_rate, term, term_unit, penalty_rate, installment_frequency, remaining_balance, due_date, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+      [client_id, clientName, amount, interestRate, term, term_unit, penalty_rate, installment_frequency, remainingBalance, dueDate, 'pending']
     );
 
     const newLoan = await db.query(`

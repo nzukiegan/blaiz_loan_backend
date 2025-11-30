@@ -10,8 +10,6 @@ class MpesaService {
             passKey: process.env.MPESA_PASS_KEY,
             callbackURL: process.env.MPESA_CALLBACK_URL
         };
-
-        console.log(this.config)
     }
 
     async getAccessToken() {
