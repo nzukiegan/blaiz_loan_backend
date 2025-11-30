@@ -9,23 +9,11 @@ dotenv.config();
 const { Pool } = pkg;
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD
-});
-
-async function deleteTable() {
-  try {
-    // drop table
-    await pool.query(`DROP TABLE IF EXISTS users CASCADE`);
-    console.log(`Table deleted successfully`);
-  } catch (err) {
-    console.error('Error deleting table:', err);
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
   }
-}
-
+});
 
 async function initDb() {
   try {
