@@ -29,6 +29,124 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.post('/apply', async (req, res) => {
+   try {
+    const clientId = req.user.id; // From auth middleware
+    const {
+      amount,
+      purpose,
+      term,
+      installment_frequency
+    } = req.body;
+
+    // Validate required fields
+    if (!amount || !purpose || !term || !installment_frequency) {
+      return res.status(400).json({
+        success: false,
+        message: 'All required fields must be provided'
+      });
+    }
+
+    // Find client information
+    const clientQuery = await db.query(
+      'SELECT id, name, phone, id_number FROM clients WHERE user_id = $1',
+      [clientId]
+    );
+
+    if (clientQuery.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client profile not found. Please complete your profile first.'
+      });
+    }
+
+    const client = clientQuery.rows[0];
+
+    // Calculate loan details
+    const interestRate = 12.0; // Fixed rate for clients
+    const penaltyRate = 2.5; // Fixed penalty rate
+    const termUnit = 'months'; // Default term unit
+    const totalInterest = (parseFloat(amount) * interestRate) / 100;
+    const totalAmount = parseFloat(amount) + totalInterest;
+    const installmentAmount = totalAmount / parseInt(term);
+    
+    // Calculate due date (term months from now)
+    const dueDate = new Date();
+    dueDate.setMonth(dueDate.getMonth() + parseInt(term));
+
+    // Insert loan application
+    const loanQuery = await db.query(
+      `INSERT INTO loans (
+        client_id, 
+        client_name, 
+        amount, 
+        interest_rate, 
+        term, 
+        term_unit, 
+        installment_frequency, 
+        penalty_rate, 
+        status, 
+        installment_amount, 
+        remaining_balance, 
+        due_date,
+        purpose,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
+      RETURNING *`,
+      [
+        client.id,
+        client.name,
+        parseFloat(amount),
+        interestRate,
+        parseInt(term),
+        termUnit,
+        installment_frequency,
+        penaltyRate,
+        'pending',
+        installmentAmount.toFixed(2),
+        totalAmount.toFixed(2),
+        dueDate,
+        purpose
+      ]
+    );
+
+    await db.query(
+      `INSERT INTO notifications (
+        user_id,
+        title,
+        message,
+        type,
+        priority,
+        related_entity_type,
+        related_entity,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)`,
+      [
+        clientId,
+        'New Loan Application',
+        `${client.name} has applied for a loan of KES ${parseFloat(amount).toLocaleString()}`,
+        'loan',
+        'medium',
+        'loan',
+        loanQuery.rows[0].id
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Loan application submitted successfully!',
+      data: loanQuery.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Loan application error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again.'
+    });
+  }
+});
+
 router.get("/:id/download", async (req, res) => {
   const clientId = req.params.id;
 

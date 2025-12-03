@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'loan_officer', 'client')),
     phone VARCHAR(20),
+    purpose VARCHAR(255),
     id_number TEXT,
     address TEXT,
     id_photo_back TEXT,
@@ -88,6 +89,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     related_entity_type VARCHAR(50) CHECK (related_entity_type IN ('loan', 'payment', 'client', 'penalty')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE user ADD COLUMN purpose VARCHAR(255);
 
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
