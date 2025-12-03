@@ -2,7 +2,7 @@ const axios = require('axios');
 
 class SmsService {
   constructor() {
-    this.apiUrl = process.env.TEXTSMS_API_URL
+    this.apiUrl = process.env.TEXT_SMS_API_URL
     this.auth = process.env.BULK_SMS_AUTHORIZATION
     this.apiKey = process.env.TEXT_SMS_API_KEY
     this.partnerID = process.env.TEXT_SMS_PARTNER_ID

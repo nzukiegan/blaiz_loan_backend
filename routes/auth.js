@@ -47,7 +47,7 @@ router.post('/forgot-password', async (req, res) => {
     smsService.sendSms(user.phone, msg)
 
     res.status(200).json({ 
-      message: 'Reset code sent to your email.' 
+      message: 'Reset code sent to your sms.' 
     });
 
   } catch (error) {
