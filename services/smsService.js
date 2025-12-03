@@ -19,12 +19,14 @@ class SmsService {
       timeToSend: new Date().toISOString()
     };
 
-    await axios.post(this.apiUrl, {
+    const resp = await axios.post(this.apiUrl, {
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(body)
     });
+
+    console.log(resp)
   }
 }
 
