@@ -184,7 +184,7 @@ router.post('/register', async (req, res) => {
       const base64Image = base64Data.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Image, 'base64');
       fs.writeFileSync(filePath, buffer);
-      return filePath;
+      return `/uploads/${filename}`;
     };
 
     let idFrontPath = '';
