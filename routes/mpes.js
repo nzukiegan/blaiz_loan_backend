@@ -145,7 +145,7 @@ router.post('/callback', async (req, res) => {
             );
           }
           const msg = `Dear ${client.name} we have received your payment of ${amount}. Remaining balance ${newRemaining}. Thank you for your cooperation`
-          await smsService.sendSms([phoneNumber], msg)
+          await smsService.sendSms(phoneNumber, msg)
         }else {
           const ref = `OTHER - ${mpesaReceiptNumber}`
           await db.query(

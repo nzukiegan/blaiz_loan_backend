@@ -7,11 +7,17 @@ const path = require('path');
 const fs = require('fs');
 const JWT_SECRET = process.env.JWT_SECRET
 const { sendEmail } = require('../utils/emailService');
+const ssService = require('../services/smsService')
+const smsService = new ssService();
 
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const result = await db.query(
+    'SELECT * FROM users WHERE email = $1',
+    [email]
+    );
+    const user = result.rows[0];
     
     if (!user) {
       return res.status(200).json({ 
@@ -20,11 +26,10 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    
-    user.reset_password_otp = otp;
-    user.reset_password_expires = new Date(Date.now() + 10 * 60 * 1000);
-    
-    await user.save();
+
+    await db.query('UPDATE users SET reset_password_otp = $1, reset_password_expires = $2 WHERE email = $3',
+      [otp, new Date(Date.now() + 10 * 60 * 1000), email]
+    )
 
     const emailSubject = 'Password Reset Code';
     const emailText = `
@@ -53,7 +58,45 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 router.post('/reset-password', async (req, res) => { 
+  try {
+    const { email, otp, newPassword } = req.body;
 
+    const result = await db.query(
+    'SELECT * FROM users WHERE email = $1',
+    [email]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid reset request.' });
+    }
+
+    if (!user.reset_password_otp || !user.reset_password_expires) {
+      return res.status(400).json({ message: 'Reset code has expired or is invalid.' });
+    }
+
+    if (new Date() > user.reset_password_expires) {
+      return res.status(400).json({ message: 'Reset code has expired.' });
+    }
+
+    if (user.reset_password_otp !== otp) {
+      return res.status(400).json({ message: 'Invalid reset code.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await db.query('UPDATE users SET password = $1, reset_password_otp = $2, reset_password_expires = $3 WHERE email = $4',
+      [hashedPassword, null, null, email]
+    )
+    
+    res.status(200).json({ 
+      message: 'Password reset successful. You can now login with your new password.' 
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error. Please try again.' });
+  }
 });
 
 router.post('/login', async (req, res) => {
@@ -118,10 +161,10 @@ router.post('/register', async (req, res) => {
   try {
     const { email, password, name, role, phone, id_number, address, idPhotoFront, idPhotoBack, passportPhoto, guarantor_name, guarantor_phone, guarantor_id} = req.body;
 
-    if (!email || !password || !name || !role) {
+    if (!email || !password || !name || !role || !phone || !id_number || !address || !idPhotoFront || !idPhotoBack || !passportPhoto || !guarantor_name || !guarantor_phone || !guarantor_id) {
       return res.status(400).json({
         success: false,
-        message: 'Email, password, name, and role are required.'
+        message: 'All fields are required'
       });
     }
 
@@ -181,7 +224,8 @@ router.post('/register', async (req, res) => {
       'INSERT INTO clients (user_id, name, email, phone, id_number, address, guarantor_name, guarantor_phone, guarantor_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
       [result.rows[0].id, name, email, phone, id_number, address, guarantor_name, guarantor_phone, guarantor_id]
     );
-
+    const msg = "Welcome to blaiz loans, Your registration detailes has been received and will be reviewed"
+    smsService.sendSms(phone, msg)
     res.status(201).json({
       success: true,
       message: 'User registered successfully!',

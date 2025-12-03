@@ -130,7 +130,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     const clientLoans = await db.query(
-      'SELECT COUNT(*) as loanCount FROM loans WHERE clientId = $1',
+      'SELECT COUNT(*) as loanCount FROM loans WHERE client_id = $1',
       [id]
     );
     
