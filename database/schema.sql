@@ -87,6 +87,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE users ADD COLUMN reset_password_otp VARCHAR(6);
+ALTER TABLE users ADD COLUMN reset_password_expires TIMESTAMP;
+
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
 CREATE INDEX IF NOT EXISTS idx_payments_loan_id ON payments(loan_id);

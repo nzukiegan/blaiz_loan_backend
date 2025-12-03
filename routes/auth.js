@@ -6,6 +6,55 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const JWT_SECRET = process.env.JWT_SECRET
+const { sendEmail } = require('../utils/emailService');
+
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+    
+    if (!user) {
+      return res.status(200).json({ 
+        message: 'If an account exists with this email, a reset code has been sent.' 
+      });
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    
+    user.reset_password_otp = otp;
+    user.reset_password_expires = new Date(Date.now() + 10 * 60 * 1000);
+    
+    await user.save();
+
+    const emailSubject = 'Password Reset Code';
+    const emailText = `
+      Hello ${user.name},
+      
+      You requested a password reset. Your one-time code is: ${otp}
+      
+      This code will expire in 10 minutes.
+      
+      If you didn't request this, please ignore this email.
+      
+      Best regards,
+      Your App Team
+    `;
+
+    await sendEmail(user.email, emailSubject, emailText);
+
+    res.status(200).json({ 
+      message: 'Reset code sent to your email.' 
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error. Please try again.' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => { 
+
+});
 
 router.post('/login', async (req, res) => {
   try {

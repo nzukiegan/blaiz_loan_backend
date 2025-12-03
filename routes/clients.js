@@ -5,15 +5,30 @@ const db = require('../config/database');
 router.get('/', async (req, res) => {
   try {
     const clients = await db.query(`
-      SELECT * FROM clients ORDER BY created_at DESC
+      SELECT 
+        c.*,
+        u.id AS user_id,
+        u.email AS user_email,
+        u.name AS user_name,
+        u.role AS user_role,
+        u.phone AS user_phone,
+        u.id_number AS user_id_number,
+        u.address AS user_address,
+        u.id_photo_back,
+        u.id_photo_front,
+        u.passport_photo
+      FROM clients c
+      LEFT JOIN users u ON c.user_id = u.id
+      ORDER BY c.created_at DESC
     `);
-    
-    res.json({ success: true, data: clients });
+
+    res.json({ success: true, data: clients.rows });
   } catch (error) {
     console.error('Error fetching clients:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 router.get('/:id', async (req, res) => {
   try {
