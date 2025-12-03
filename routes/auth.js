@@ -174,9 +174,9 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const uploadDir = path.join(__dirname, '../uploads');
+    const uploadDir = path.join(__dirname, '../public/uploads');
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     const saveBase64Image = (base64Data, filename) => {
