@@ -188,12 +188,12 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const result = await db.run(
-      'INSERT INTO clients (name, email, phone, id_number, address, guarantorName, guarantorPhone, guarantorId) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+    const result = await db.query(
+      'INSERT INTO clients (name, email, phone, id_number, address, guarantorName, guarantorPhone, guarantorId) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
       [name, email, phone, id_number, address, guarantorName, guarantorPhone, guarantorId]
     );
 
-    const newClient = await db.query('SELECT * FROM clients WHERE id = $1', [result.lastID]);
+    const newClient = await db.query('SELECT * FROM clients WHERE id = $1', [result.rows[0].id]);
     
     res.json({ 
       success: true, 
@@ -219,7 +219,7 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    await db.run(
+    await db.query(
       'UPDATE clients SET name = $1, email = $2, phone = $3, id_number = $4, address = $5, guarantorName = $6, guarantorPhone = $7, guarantorId = $8 WHERE id = $9',
       [name, email, phone, id_number, address, guarantorName, guarantorPhone, guarantorId, id]
     );
@@ -261,7 +261,7 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    const result = await db.run('DELETE FROM clients WHERE id = $2', [id]);
+    const result = await db.query('DELETE FROM clients WHERE id = $2', [id]);
 
     if (result.changes === 0) {
       return res.status(404).json({ 
