@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const JWT_SECRET = process.env.JWT_SECRET
-const { sendEmail } = require('../utils/emailService');
 const ssService = require('../services/smsService')
 const smsService = new ssService();
 
@@ -31,8 +30,7 @@ router.post('/forgot-password', async (req, res) => {
       [otp, new Date(Date.now() + 10 * 60 * 1000), email]
     )
 
-    const emailSubject = 'Password Reset Code';
-    const emailText = `
+    const msg = `
       Hello ${user.name},
       
       You requested a password reset. Your one-time code is: ${otp}
@@ -45,7 +43,7 @@ router.post('/forgot-password', async (req, res) => {
       Your App Team
     `;
 
-    await sendEmail(user.email, emailSubject, emailText);
+    smsService.sendSms(user.phone, msg)
 
     res.status(200).json({ 
       message: 'Reset code sent to your email.' 
