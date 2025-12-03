@@ -214,7 +214,7 @@ router.post('/register', async (req, res) => {
       idBackPath = uploadImage(idPhotoBack);
     }
     if (passportPhoto) {
-      passportPath = upladImage(passportPhoto);
+      passportPath = uploadImage(passportPhoto);
     }
 
     const qResults = await db.query('SELECT * FROM users WHERE email = $1', [email]);
