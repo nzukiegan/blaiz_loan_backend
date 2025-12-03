@@ -261,7 +261,7 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    const result = await db.query('DELETE FROM clients WHERE id = $2', [id]);
+    const result = await db.query('DELETE FROM clients WHERE id = $1', [id]);
 
     if (result.changes === 0) {
       return res.status(404).json({ 
