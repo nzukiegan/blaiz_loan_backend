@@ -5,10 +5,17 @@ const bcrypt = require('bcryptjs');
 const crypto =  require('crypto')
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const JWT_SECRET = process.env.JWT_SECRET
 const ssService = require('../services/smsService')
 const smsService = new ssService();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
+});
 
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -179,26 +186,35 @@ router.post('/register', async (req, res) => {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    const saveBase64Image = (base64Data, filename) => {
-      const filePath = path.join(uploadDir, filename);
-      const base64Image = base64Data.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(base64Image, 'base64');
-      fs.writeFileSync(filePath, buffer);
-      return `/uploads/${filename}`;
+
+    const uploadImage = async (base64Image) => {
+      try {
+        const data = base64Image.startsWith('data:image')
+          ? base64Image
+          : `data:image/png;base64,${base64Image}`;
+
+        const result = await cloudinary.uploader.upload(data);
+        return result.secure_url;
+      } catch (err) {
+        console.error('Cloudinary upload error:', err);
+        return null;
+      }
     };
+    
+
 
     let idFrontPath = '';
     let idBackPath = '';
     let passportPath = '';
 
     if (idPhotoFront) {
-      idFrontPath = saveBase64Image(idPhotoFront, `${Date.now()}_idFront.png`);
+      idFrontPath = uploadImage(idPhotoFront);
     }
     if (idPhotoBack) {
-      idBackPath = saveBase64Image(idPhotoBack, `${Date.now()}_idBack.png`);
+      idBackPath = uploadImage(idPhotoBack);
     }
     if (passportPhoto) {
-      passportPath = saveBase64Image(passportPhoto, `${Date.now()}_passport.png`);
+      passportPath = upladImage(passportPhoto);
     }
 
     const qResults = await db.query('SELECT * FROM users WHERE email = $1', [email]);
