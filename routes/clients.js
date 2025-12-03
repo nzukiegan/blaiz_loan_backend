@@ -29,6 +29,126 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get("/:id/download", async (req, res) => {
+  const clientId = req.params.id;
+
+  try {
+    const client = await db.query(
+      `SELECT * FROM clients WHERE id = $1`,
+      [clientId]
+    );
+
+    if (client.rows.length === 0) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    const c = client.rows[0];
+
+    const user = await db.query(
+      `SELECT * FROM users WHERE id = $1`,
+      [c.user_id]
+    );
+
+    const loans = await db.query(
+      `SELECT * FROM loans WHERE client_id = $1`,
+      [clientId]
+    );
+
+    const payments = await db.query(
+      `SELECT * FROM payments WHERE client_id = $1`,
+      [clientId]
+    );
+
+    const penalties = await db.query(
+      `SELECT * FROM penalties WHERE client_id = $1`,
+      [clientId]
+    );
+
+    const doc = new PDFDocument();
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=client_${clientId}.pdf`
+    );
+
+    doc.pipe(res);
+
+    doc.fontSize(22).text("Client Report", { align: "center" }).moveDown();
+
+    doc.fontSize(15).text("CLIENT INFORMATION");
+    doc.fontSize(12)
+      .text(`Name: ${c.name}`)
+      .text(`Email: ${c.email}`)
+      .text(`Phone: ${c.phone}`)
+      .text(`ID Number: ${c.id_number}`)
+      .text(`Address: ${c.address}`)
+      .moveDown();
+
+    doc.fontSize(15).text("GUARANTOR INFORMATION");
+    doc.fontSize(12)
+      .text(`Guarantor Name: ${c.guarantor_name}`)
+      .text(`Guarantor Phone: ${c.guarantor_phone}`)
+      .text(`Guarantor ID: ${c.guarantor_id}`)
+      .moveDown();
+
+    doc.fontSize(15).text("LOANS").moveDown(0.5);
+
+    if (loans.rows.length === 0) {
+      doc.text("No loans found").moveDown();
+    } else {
+      loans.rows.forEach((loan, i) => {
+        doc.fontSize(12)
+          .text(`Loan #${i + 1}`)
+          .text(`Amount: ${loan.amount}`)
+          .text(`Interest Rate: ${loan.interest_rate}`)
+          .text(`Term: ${loan.term} ${loan.term_unit}`)
+          .text(`Installment Frequency: ${loan.installment_frequency}`)
+          .text(`Penalty Rate: ${loan.penalty_rate}`)
+          .text(`Status: ${loan.status}`)
+          .text(`Remaining Balance: ${loan.remaining_balance}`)
+          .text(`Total Paid: ${loan.total_paid}`)
+          .moveDown();
+      });
+    }
+
+    doc.fontSize(15).text("PAYMENTS").moveDown(0.5);
+
+    if (payments.rows.length === 0) {
+      doc.text("No payments found").moveDown();
+    } else {
+      payments.rows.forEach((p, i) => {
+        doc.fontSize(12)
+          .text(`Payment #${i + 1}`)
+          .text(`Amount: ${p.amount}`)
+          .text(`Method: ${p.method}`)
+          .text(`Reference: ${p.reference}`)
+          .text(`Date: ${p.payment_date}`)
+          .moveDown();
+      });
+    }
+
+    doc.fontSize(15).text("PENALTIES").moveDown(0.5);
+
+    if (penalties.rows.length === 0) {
+      doc.text("No penalties found").moveDown();
+    } else {
+      penalties.rows.forEach((p, i) => {
+        doc.fontSize(12)
+          .text(`Penalty #${i + 1}`)
+          .text(`Amount: ${p.amount}`)
+          .text(`Reason: ${p.reason}`)
+          .text(`Status: ${p.status}`)
+          .moveDown();
+      });
+    }
+
+    doc.end();
+  } catch (error) {
+    console.error("PDF download error:", error);
+    res.status(500).json({ message: "Server error generating PDF" });
+  }
+});
 
 router.get('/:id', async (req, res) => {
   try {
