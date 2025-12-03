@@ -1,4 +1,5 @@
 const axios = require('axios');
+require('dotenv').config();
 
 class SmsService {
   constructor() {
@@ -19,12 +20,17 @@ class SmsService {
       timeToSend: new Date().toISOString()
     };
 
-    const resp = await axios.post(this.apiUrl, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
+    const resp = await axios.post(
+      this.apiUrl,
+      body,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: this.auth
+        }
+      }
+    );
+
 
     console.log(resp)
   }

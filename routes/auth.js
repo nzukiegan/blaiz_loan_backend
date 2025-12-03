@@ -202,7 +202,7 @@ router.post('/register', async (req, res) => {
     }
 
     const qResults = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    const existingUser = qResults[0];
+    const existingUser = qResults.rows[0];
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists.' });
     }
