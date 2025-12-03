@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     reset_password_otp VARCHAR(6),
     reset_password_expires TIMESTAMP,
     passport_photo TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS clients (
