@@ -33,20 +33,22 @@ async function createAdmin() {
   try {
     const email = 'admin@blaizeloans.co.ke';
     const password = 'blaizloansadmin2546';
+    const mobile = '254745502998'
     const name = 'Administrator';
     const role = 'admin';
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      `INSERT INTO users (email, password_hash, name, role) 
-      VALUES ($1, $2, $3, $4) 
+      `INSERT INTO users (email, password_hash, name, role, phone) 
+      VALUES ($1, $2, $3, $4, $5) 
       ON CONFLICT (email) 
       DO UPDATE SET 
         password_hash = EXCLUDED.password_hash,
         name = EXCLUDED.name,
-        role = EXCLUDED.role`,
-      [email, hashedPassword, name, role]
+        role = EXCLUDED.role,
+        phone = EXCLUDED.phone`,
+      [email, hashedPassword, name, role, mobile]
     );
 
     console.log('Admin account ensured.');
