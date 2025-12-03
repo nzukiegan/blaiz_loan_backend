@@ -32,7 +32,7 @@ class SmsService {
     );
 
 
-    console.log(resp)
+    console.log(resp.data)
   }
 }
 
