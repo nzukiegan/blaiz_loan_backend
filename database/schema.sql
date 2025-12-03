@@ -9,8 +9,10 @@ CREATE TABLE IF NOT EXISTS users (
     address TEXT,
     id_photo_back TEXT,
     id_photo_front TEXT,
+    reset_password_otp VARCHAR(6),
+    reset_password_expires TIMESTAMP,
     passport_photo TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 
 CREATE TABLE IF NOT EXISTS clients (
@@ -86,9 +88,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     related_entity_type VARCHAR(50) CHECK (related_entity_type IN ('loan', 'payment', 'client', 'penalty')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-ALTER TABLE users ADD COLUMN reset_password_otp VARCHAR(6);
-ALTER TABLE users ADD COLUMN reset_password_expires TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
