@@ -202,19 +202,18 @@ router.post('/register', async (req, res) => {
     };
     
 
-
     let idFrontPath = '';
     let idBackPath = '';
     let passportPath = '';
 
     if (idPhotoFront) {
-      idFrontPath = uploadImage(idPhotoFront);
+      idFrontPath = await uploadImage(idPhotoFront);
     }
     if (idPhotoBack) {
-      idBackPath = uploadImage(idPhotoBack);
+      idBackPath = await uploadImage(idPhotoBack);
     }
     if (passportPhoto) {
-      passportPath = uploadImage(passportPhoto);
+      passportPath = await uploadImage(passportPhoto);
     }
 
     const qResults = await db.query('SELECT * FROM users WHERE email = $1', [email]);

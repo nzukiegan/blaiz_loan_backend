@@ -1,19 +1,51 @@
 require("dotenv").config();
-const SmsService = require("./services/smsService");
+const cloudinary = require('cloudinary').v2;
 
-async function testSms() {
-  const sms = new SmsService();
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
+});
+
+const uploadImage = async (base64Image) => {
+  console.log("Starting Cloudinary upload...");
 
   try {
-    await sms.sendSms(
-      "254745502998",
-      "Hello! This is a test message."
-    );
+    const data = base64Image.startsWith('data:image')
+      ? base64Image
+      : `data:image/png;base64,${base64Image}`;
 
-    console.log("SMS sent (or attempted). Check API response above.");
+    console.log("Uploading to Cloudinary...");
+
+    const result = await cloudinary.uploader.upload(data);
+
+    console.log("Upload Success:", {
+      url: result.secure_url,
+      public_id: result.public_id,
+      bytes: result.bytes,
+      format: result.format,
+    });
+
+    return result.secure_url;
   } catch (err) {
-    console.error("Error sending SMS:", err.response?.data || err.message);
+    console.error("Cloudinary upload error:", err);
+    return null;
   }
+};
+
+if (require.main === module) {
+  (async () => {
+    console.log("Running Cloudinary upload test...");
+
+    const testBase64 =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+    const result = await uploadImage(testBase64);
+
+    console.log("Test Result:", result);
+  })();
 }
 
-testSms();
+module.exports = {
+  uploadImage,
+};
