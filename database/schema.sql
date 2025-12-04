@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS loans (
     total_paid DECIMAL(15,2) DEFAULT 0,
     penalties DECIMAL(15,2) DEFAULT 0,
     due_date DATE NOT NULL,
+    rejected BOOLEAN DEFAULT FALSE,
     approved_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -90,7 +91,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE loans ADD COLUMN purpose VARCHAR(255);
+ALTER TABLE loans ADD COLUMN rejected BOOLEAN;
 
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
