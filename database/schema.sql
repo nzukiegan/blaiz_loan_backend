@@ -90,8 +90,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE users ADD COLUMN purpose VARCHAR(255);
-
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
 CREATE INDEX IF NOT EXISTS idx_payments_loan_id ON payments(loan_id);
