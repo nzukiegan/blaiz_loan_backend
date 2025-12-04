@@ -62,7 +62,7 @@ router.post('/apply', async (req, res) => {
 
     const client = clientQuery.rows[0];
 
-    const interestRate = 5;
+    const interestRate = 20;
     const penaltyRate = 2.5;
     const termUnit = term_unit;
     const totalInterest = (parseFloat(amount) * interestRate) / 100;

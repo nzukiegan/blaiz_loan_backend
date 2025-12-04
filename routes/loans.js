@@ -153,8 +153,6 @@ router.put('/:id/reject', async (req, res) => {
         message: 'Loan not found.' 
       });
     }
-    
-    console.log(loan)
 
     if (loan.status !== 'pending') {
       return res.status(400).json({ 
