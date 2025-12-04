@@ -121,7 +121,7 @@ router.post('/apply', async (req, res) => {
         created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)`,
       [
-        clientId,
+        client.id,
         'New Loan Application',
         `${client.name} has applied for a loan of KES ${parseFloat(amount).toLocaleString()}`,
         'loan',
