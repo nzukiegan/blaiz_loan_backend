@@ -98,3 +98,31 @@ CREATE INDEX IF NOT EXISTS idx_payments_client_id ON payments(client_id);
 CREATE INDEX IF NOT EXISTS idx_penalties_loan_id ON penalties(loan_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+
+-- ============================================================
+--  Utility: Clear ALL Data From All Tables (Safe Reset Tool)
+-- ============================================================
+CREATE OR REPLACE FUNCTION clear_all_data()
+RETURNS void AS $$
+BEGIN
+    -- Temporarily disable triggers (foreign key checks)
+    PERFORM set_config('session_replication_role', 'replica', true);
+
+    -- Truncate all tables in dependency order
+    TRUNCATE TABLE
+        notifications,
+        penalties,
+        payments,
+        loans,
+        clients,
+        users
+    RESTART IDENTITY CASCADE;
+
+    -- Restore default trigger behavior
+    PERFORM set_config('session_replication_role', 'origin', true);
+END;
+$$ LANGUAGE plpgsql;
+
+-- To clear the entire database, run:
+
+SELECT clear_all_data();

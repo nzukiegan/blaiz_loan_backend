@@ -58,10 +58,10 @@ router.post('/', async (req, res) => {
   try {
     const { client_id, clientName, amount, interestRate, term, term_unit, installment_frequency, penalty_rate, remainingBalance, dueDate } = req.body;
     
-    if (!client_id || !amount || !interestRate || !term) {
+    if (!client_id || !amount || !interestRate || !term || term_unit || installment_frequency || penalty_rate || remainingBalance || dueDate) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Client, amount, interest rate, and term are required.' 
+        message: 'All fields are required' 
       });
     }
 

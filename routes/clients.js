@@ -69,12 +69,11 @@ router.post('/apply', async (req, res) => {
     const totalInterest = (parseFloat(amount) * interestRate) / 100;
     const totalAmount = parseFloat(amount) + totalInterest;
     const installmentAmount = totalAmount / parseInt(term);
+    const remainingBalance = totalAmount.toFixed(2) * interestRate;
     
-    // Calculate due date (term months from now)
     const dueDate = new Date();
     dueDate.setMonth(dueDate.getMonth() + parseInt(term));
 
-    // Insert loan application
     const loanQuery = await db.query(
       `INSERT INTO loans (
         client_id, 
@@ -104,7 +103,7 @@ router.post('/apply', async (req, res) => {
         penaltyRate,
         'pending',
         installmentAmount.toFixed(2),
-        totalAmount.toFixed(2),
+        remainingBalance,
         dueDate,
         purpose
       ]
