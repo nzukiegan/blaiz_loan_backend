@@ -31,23 +31,22 @@ router.get('/', async (req, res) => {
 
 router.post('/apply', async (req, res) => {
    try {
-    const clientId = req.user.id; // From auth middleware
+    const clientId = req.user.id;
     const {
       amount,
       purpose,
       term,
+      term_unit,
       installment_frequency
     } = req.body;
 
-    // Validate required fields
-    if (!amount || !purpose || !term || !installment_frequency) {
+    if (!amount || !purpose || !term || !installment_frequency || !term_unit) {
       return res.status(400).json({
         success: false,
         message: 'All required fields must be provided'
       });
     }
 
-    // Find client information
     const clientQuery = await db.query(
       'SELECT id, name, phone, id_number FROM clients WHERE user_id = $1',
       [clientId]
@@ -62,10 +61,9 @@ router.post('/apply', async (req, res) => {
 
     const client = clientQuery.rows[0];
 
-    // Calculate loan details
-    const interestRate = 12.0; // Fixed rate for clients
-    const penaltyRate = 2.5; // Fixed penalty rate
-    const termUnit = 'months'; // Default term unit
+    const interestRate = 5;
+    const penaltyRate = 2.5;
+    const termUnit = term_unit;
     const totalInterest = (parseFloat(amount) * interestRate) / 100;
     const totalAmount = parseFloat(amount) + totalInterest;
     const installmentAmount = totalAmount / parseInt(term);
