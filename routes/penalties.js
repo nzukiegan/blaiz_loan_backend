@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const sservice = require('../services/smsService');
+const smsService = new sservice();
 
 router.get('/', async (req, res) => {
   try {
@@ -54,7 +56,16 @@ router.post('/', async (req, res) => {
       LEFT JOIN loans l ON p.loan_id = l.id 
       WHERE p.id = $1
     `, [result.lastID]);
+
+    const clientRst = await db.query(
+      'SELECT phone FROM clients WHERE id = $1',
+      [client_id]
+    );
     
+    const phone = clientRst.rows[0].phone
+
+    await smsService.sendSms(phone, `Dear ${loan.client_name}, your loan of ${loan.amount} has been applied a penalty of of ${amount} due to ${reason}`);
+
     res.json({ 
       success: true, 
       message: 'Penalty applied successfully!',

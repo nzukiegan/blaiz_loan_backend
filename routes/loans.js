@@ -128,7 +128,7 @@ router.put('/:id/approve', async (req, res) => {
     const clientRslt = await db.query('SELECT phone FROM clients WHERE id = $1', [loan.client_id]);
     const clientPhone = clientRslt.rows[0].phone;
 
-    await smsService.sendSms([clientPhone], `Dear ${loan.client_name}, your loan of ${loan.amount} has been approved successfully.`);
+    await smsService.sendSms(clientPhone, `Dear ${loan.client_name}, your loan of ${loan.amount} has been approved successfully.`);
 
     res.json({ 
       success: true, 
@@ -167,7 +167,13 @@ router.put('/:id/reject', async (req, res) => {
     );
 
     const updatedLoan = await db.query('SELECT * FROM loans WHERE id = $1', [id]);
+
+    const clientRst = await db.query('SELECT phone FROM clients WHERE id = $1', [loan.client_id]);
+
+    const phone = clientRst.rows[0].phone
     
+    await smsService.sendSms(phone, `Dear ${loan.client_name}, your loan of ${loan.amount} has been rejected.`);
+
     res.json({ 
       success: true, 
       message: 'Loan rejected successfully!',

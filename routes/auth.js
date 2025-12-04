@@ -239,7 +239,7 @@ router.post('/register', async (req, res) => {
       'INSERT INTO clients (user_id, name, email, phone, id_number, address, guarantor_name, guarantor_phone, guarantor_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
       [result.rows[0].id, name, email, phone, id_number, address, guarantor_name, guarantor_phone, guarantor_id]
     );
-    const msg = "Welcome to blaiz loans, Your registration detailes has been received and will be reviewed"
+    const msg = `Hello ${name}, Welcome to blaiz loans, Your registration detailes has been received and will be reviewed`
     smsService.sendSms(phone, msg)
     res.status(201).json({
       success: true,
