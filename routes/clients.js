@@ -140,7 +140,9 @@ router.post('/apply', async (req, res) => {
     console.error('Loan application error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error. Please try again.'
+      message: error.message || "Unknown error",
+      stack: error.stack,
+      details: error
     });
   }
 });
