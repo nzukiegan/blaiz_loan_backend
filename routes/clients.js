@@ -394,7 +394,7 @@ router.delete('/:id', async (req, res) => {
       message: 'Client deleted successfully!' 
     });
   } catch (error) {
-    console.error('Error deleting client:', error);
+    console.error('Error deleting client, cannot delete client with existing loans');
     res.status(500).json({ success: false, message: error.message });
   }
 });
