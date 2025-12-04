@@ -45,7 +45,7 @@ router.post('/forgot-password', async (req, res) => {
       
       This code will expire in 10 minutes.
       
-      If you didn't request this, please ignore this email.
+      If you didn't request this, please ignore this text.
       
       Best regards,
       Your App Team

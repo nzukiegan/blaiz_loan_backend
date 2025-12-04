@@ -141,12 +141,10 @@ router.put('/:id/approve', async (req, res) => {
   }
 });
 
-// Reject loan
 router.put('/:id/reject', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if loan exists
     const loanRslt = await db.query('SELECT * FROM loans WHERE id = $1', [id]);
     const loan = loanRslt.rows[0];
     if (!loan) {
@@ -166,7 +164,7 @@ router.put('/:id/reject', async (req, res) => {
     }
 
     await db.query(
-      'UPDATE loans SET status = "rejected" WHERE id = $1',
+      "UPDATE loans SET status = 'rejected' WHERE id = $1",
       [id]
     );
 
@@ -175,7 +173,7 @@ router.put('/:id/reject', async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Loan rejected successfully!',
-      data: updatedLoan 
+      data: updatedLoan.rows[0]
     });
   } catch (error) {
     console.error('Error rejecting loan:', error);
@@ -183,7 +181,6 @@ router.put('/:id/reject', async (req, res) => {
   }
 });
 
-// Update loan status
 router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
