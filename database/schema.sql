@@ -105,9 +105,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
 CREATE OR REPLACE FUNCTION clear_all_data()
 RETURNS void AS $$
 BEGIN
-    -- Temporarily disable triggers (foreign key checks)
-    PERFORM set_config('session_replication_role', 'replica', true);
-
     -- Truncate all tables in dependency order
     TRUNCATE TABLE
         notifications,
