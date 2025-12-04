@@ -40,12 +40,6 @@ router.post('/apply', async (req, res) => {
       installment_frequency
     } = req.body;
 
-    const dbResp = await db.query(
-      'SELECT id FROM clients WHERE user_id = $1',
-      [user_id]
-    );
-
-    const clientId = dbResp.rows[0].id
 
     if (!amount || !purpose || !term || !installment_frequency || !term_unit) {
       return res.status(400).json({
@@ -56,7 +50,7 @@ router.post('/apply', async (req, res) => {
 
     const clientQuery = await db.query(
       'SELECT id, name, phone, id_number FROM clients WHERE user_id = $1',
-      [clientId]
+      [user_id]
     );
 
     if (clientQuery.rows.length === 0) {
