@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const db = require('../db'); // pg pool instance
+const db = require('../config/database');
 const SMSService = require('../services/smsService');
 
 const smsService = new SMSService();
