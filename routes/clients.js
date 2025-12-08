@@ -360,43 +360,60 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const client = await db.query('SELECT id FROM clients WHERE id = $1', [id]);
-    if (!client) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Client not found.' 
-      });
-    }
-
-    const clientLoans = await db.query(
-      'SELECT COUNT(*) as loanCount FROM loans WHERE client_id = $1',
+    const clientResult = await db.query(
+      'SELECT id FROM clients WHERE id = $1',
       [id]
     );
-    
-    if (clientLoans.loanCount > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Cannot delete client with existing loans. Please delete loans first.' 
+
+    if (clientResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found.'
       });
     }
 
-    const result = await db.query('DELETE FROM clients WHERE id = $1', [id]);
+    const activeLoans = await db.query(
+      "SELECT id FROM loans WHERE client_id = $1 AND status = 'active'",
+      [id]
+    );
 
-    if (result.changes === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Client not found.' 
+    if (activeLoans.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete client with active loans.'
       });
     }
-    
-    res.json({ 
-      success: true, 
-      message: 'Client deleted successfully!' 
+
+    await db.query(
+      'DELETE FROM loans WHERE client_id = $1',
+      [id]
+    );
+
+    const deleteClient = await db.query(
+      'DELETE FROM clients WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (deleteClient.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Client and all non-active loans deleted successfully.'
     });
+
   } catch (error) {
-    console.error('Error deleting client, cannot delete client with existing loans');
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error deleting client:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting client.'
+    });
   }
 });
+
 
 module.exports = router;
