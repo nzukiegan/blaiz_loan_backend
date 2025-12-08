@@ -1,17 +1,33 @@
 const express = require('express');
 const router = express.Router();
-const ssService = require('../services/smsService')
-const smsService = new ssService();
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const db = require('../db'); // pg pool instance
+const SMSService = require('../services/smsService');
 
-router.get('/', (req, res) => {
+const smsService = new SMSService();
+
+/**
+ * GET all users (without passwords)
+ */
+router.get('/', async (req, res) => {
   try {
-    const usersWithoutPasswords = users.map(({ password, ...user }) => user);
-    res.json({ success: true, users: usersWithoutPasswords });
+    const result = await db.query(`
+      SELECT id, name, email, role, phone, id_number, address, purpose, created_at
+      FROM users
+      ORDER BY created_at DESC
+    `);
+
+    res.json({ success: true, users: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
+/**
+ * CREATE user
+ */
 router.post('/users', async (req, res) => {
   try {
     const {
@@ -44,170 +60,162 @@ router.post('/users', async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    const newUser = await db.query(
-      `INSERT INTO users (
-        name, email, password_hash, role, phone, id_number, address, purpose, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-      RETURNING id, name, email, role, phone, created_at`,
+    const result = await db.query(
+      `
+      INSERT INTO users (
+        name, email, password_hash, role, phone, id_number, address, purpose
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      RETURNING id, name, email, role, phone, created_at
+      `,
       [name, email, passwordHash, role, phone || null, id_number || null, address || null, purpose || null]
     );
 
     const msg = `
-      Hello ${name},
-      
-      Your account has been created on the Loan Management System.
-      
-      Login Credentials:
-      Email: ${email}
-      Password: ${password}
-      
-      Please change your password after first login.
-      
-      Role: ${role}
-      
-      Best regards,
-      System Administrator
+Hello ${name},
+
+Your account has been created.
+
+Email: ${email}
+Password: ${password}
+
+Please change your password after first login.
+
+Role: ${role}
     `;
 
-    smsService.sendSms(phone, msg)
+    if (phone) smsService.sendSms(phone, msg);
 
     res.status(201).json({
       success: true,
       message: 'User created successfully',
-      data: newUser.rows[0]
+      data: result.rows[0]
     });
 
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error. Please try again.'
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-
-router.get('/:id', (req, res) => {
+/**
+ * GET single user
+ */
+router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const user = users.find(u => u.id === id);
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const { password, ...userWithoutPassword } = user;
-    res.json({ success: true, user: userWithoutPassword });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.put('/:id', (req, res) => {
-  try {
-    const { id } = req.params;
-    const userIndex = users.findIndex(u => u.id === id);
-    
-    if (userIndex === -1) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    users[userIndex] = { ...users[userIndex], ...req.body };
-    const { password, ...userWithoutPassword } = users[userIndex];
-    
-    res.json({ success: true, user: userWithoutPassword });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.delete('/:id', (req, res) => {
-  try {
-    const { id } = req.params;
-    users = users.filter(u => u.id !== id);
-    res.json({ success: true, message: 'User deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.put('/:id/reset-password', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { newPassword } = req.body;
-    const userIndex = users.findIndex(u => u.id === id);
-    
-    if (userIndex === -1) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    users[userIndex].password = hashedPassword;
-    
-    res.json({ success: true, message: 'Password reset successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.post('/:userId/reset-user-password', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const userQuery = await db.query(
-      'SELECT id, name, email, phone FROM users WHERE id = $1',
-      [userId]
+    const result = await db.query(
+      `
+      SELECT id, name, email, role, phone, id_number, address, purpose, created_at
+      FROM users WHERE id = $1
+      `,
+      [req.params.id]
     );
 
-    if (userQuery.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const user = userQuery.rows[0];
+    res.json({ success: true, user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
-    const newPassword = crypto.randomBytes(8).toString('hex');
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(newPassword, salt);
+/**
+ * UPDATE user
+ */
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, role, phone, address, purpose } = req.body;
+
+    const result = await db.query(
+      `
+      UPDATE users
+      SET name = COALESCE($1,name),
+          role = COALESCE($2,role),
+          phone = COALESCE($3,phone),
+          address = COALESCE($4,address),
+          purpose = COALESCE($5,purpose),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $6
+      RETURNING id, name, email, role, phone
+      `,
+      [name, role, phone, address, purpose, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * DELETE user
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM users WHERE id = $1 RETURNING id',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * ADMIN reset user password
+ */
+router.post('/:id/reset-password', async (req, res) => {
+  try {
+    const userResult = await db.query(
+      'SELECT id, name, phone FROM users WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const newPassword = crypto.randomBytes(6).toString('hex');
+    const passwordHash = await bcrypt.hash(newPassword, 10);
 
     await db.query(
       'UPDATE users SET password_hash = $1 WHERE id = $2',
-      [passwordHash, userId]
+      [passwordHash, req.params.id]
     );
 
-    const nsg = `
-      Hello ${user.name},
-      
-      Your password has been reset by the system administrator.
-      
-      Your new password is: ${newPassword}
-      
-      Please login and change your password immediately.
-      
-      If you did not request this change, please contact your administrator.
-      
-      Best regards,
-      System Administrator
+    const msg = `
+Hello ${userResult.rows[0].name},
+
+Your password has been reset.
+
+New password: ${newPassword}
+Please change it after login.
     `;
 
-    smsService.sendSms(user.phone, msg)
+    smsService.sendSms(userResult.rows[0].phone, msg);
 
     res.json({
       success: true,
-      message: 'Password reset successful. New password sent to user\'s email.'
+      message: 'Password reset successfully'
     });
 
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error. Please try again.'
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
