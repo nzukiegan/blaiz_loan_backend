@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS loans (
     client_name VARCHAR(255) NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
     interest_rate DECIMAL(5,2) NOT NULL,
+    payment_start_date DATE,
     term INTEGER NOT NULL,
     term_unit VARCHAR(10) NOT NULL CHECK (term_unit IN ('days','weeks','months')),
     installment_frequency VARCHAR(10) NOT NULL CHECK (installment_frequency IN ('days','weeks','months')),
@@ -91,8 +92,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE loans
-ADD COLUMN payment_start_date DATE;
 
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
