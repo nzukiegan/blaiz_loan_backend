@@ -98,11 +98,16 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Calculate installment_amount
+    const totalInterest = (amount * interestRate) / 100;
+    const totalRepayment = parseFloat(amount) + totalInterest;
+    const installment_amount = totalRepayment / parseInt(term);
+
     const result = await db.query(
-      `INSERT INTO loans (client_id, client_name, amount, interest_rate, term, term_unit, penalty_rate, installment_frequency, remaining_balance, due_date, status) 
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-      RETURNING *`,
-      [client_id, clientName, amount, interestRate, term, term_unit, penalty_rate, installment_frequency, remainingBalance, dueDate, 'pending']
+      `INSERT INTO loans (client_id, client_name, amount, interest_rate, term, term_unit, penalty_rate, installment_frequency, remaining_balance, due_date, installment_amount, status) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING *`,
+      [client_id, clientName, amount, interestRate, term, term_unit, penalty_rate, installment_frequency, remainingBalance, dueDate, installment_amount, 'pending']
     );
 
     const newLoan = result.rows[0];
