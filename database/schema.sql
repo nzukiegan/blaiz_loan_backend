@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE loans
+ADD COLUMN payment_start_date DATE;
+
 CREATE INDEX IF NOT EXISTS idx_loans_client_id ON loans(client_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
 CREATE INDEX IF NOT EXISTS idx_payments_loan_id ON payments(loan_id);

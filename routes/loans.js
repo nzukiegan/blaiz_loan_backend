@@ -54,6 +54,31 @@ router.get('/api/loans/client/:client_id', async (req, res) => {
   }
 });
 
+
+router.post('/api/loans/:loanId/payment-start-date', async (req, res) => {
+  const { loanId } = req.params;
+  const { payment_start_date } = req.body;
+
+  if (!payment_start_date) {
+    return res.status(400).json({ message: 'Payment start date required' });
+  }
+
+  try {
+    await pool.query(
+      `UPDATE loans
+       SET payment_start_date = $1, updated_at = NOW()
+       WHERE id = $2`,
+      [payment_start_date, loanId]
+    );
+
+    res.json({ message: 'Payment start date set successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 router.post('/', async (req, res) => {
   try {
     const { client_id, clientName, amount, interestRate, term, term_unit, installment_frequency, penalty_rate, remainingBalance, dueDate } = req.body;
