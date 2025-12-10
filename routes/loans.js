@@ -44,7 +44,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/api/loans/client/:client_id', async (req, res) => {
+router.get('/client/:client_id', async (req, res) => {
   try {
     const { client_id } = req.params;
     const clientLoans = loans.filter(loan => loan.client_id === client_id);
@@ -55,7 +55,7 @@ router.get('/api/loans/client/:client_id', async (req, res) => {
 });
 
 
-router.post('/api/loans/:loanId/payment-start-date', async (req, res) => {
+router.post('/:loanId/payment-start-date', async (req, res) => {
   const { loanId } = req.params;
   const { payment_start_date } = req.body;
 
