@@ -12,66 +12,76 @@ async function sendDailyLoanReminders() {
       JOIN clients c ON l.client_id = c.id
       WHERE l.status IN ('active','overdue')
     `);
-
+    
     for (const loan of loans) {
-      if (loan.due_date.toISOString().slice(0,10) === new Date().toISOString().slice(0,10)) {
-        const reminderMsg = `Dear ${loan.client_name}, your loan payment of KES ${loan.remaining_balance} is due today.`;
+  const today = new Date().toISOString().slice(0, 10);
 
-        await smsService.sendSms([loan.phone], reminderMsg);
+  // Only process loans that have a payment start date
+  if (!loan.payment_start_date) continue;
 
-        await db.query(
-          `INSERT INTO notifications (user_id, title, message, type, priority, related_entity, related_entity_type)
-           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-          [
-            loan.client_id,
-            'Loan Payment Reminder',
-            reminderMsg,
-            'loan',
-            'high',
-            loan.id.toString(),
-            'loan',
-          ]
-        );
-      }
+  // Reminder for due today
+  if (loan.due_date.toISOString().slice(0, 10) === today) {
+    const reminderMsg = `Dear ${loan.client_name}, your loan payment of KES ${loan.installment_amount} is due today.`;
 
-      if (loan.due_date < new Date() && loan.remaining_balance > 0) {
-        const penaltyAmount = (loan.amount * loan.penalty_rate) / 100;
+    await smsService.sendSms([loan.phone], reminderMsg);
 
-        await db.query(
-          `INSERT INTO penalties (loan_id, client_id, amount, reason)
-           VALUES ($1,$2,$3,$4)`,
-          [loan.id, loan.client_id, penaltyAmount, 'Installment defaulted']
-        );
+    await db.query(
+      `INSERT INTO notifications (user_id, title, message, type, priority, related_entity, related_entity_type)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        loan.client_id,
+        'Loan Payment Reminder',
+        reminderMsg,
+        'loan',
+        'high',
+        loan.id.toString(),
+        'loan',
+      ]
+    );
+  }
 
-        await db.query(
-          `UPDATE loans
-           SET penalties = penalties + $1,
-               remaining_balance = remaining_balance + $1,
-               status = 'overdue',
-               updated_at = CURRENT_TIMESTAMP
-           WHERE id = $2`,
-          [penaltyAmount, loan.id]
-        );
+  // Apply penalty for overdue installments
+  if (loan.due_date < new Date() && loan.remaining_balance > 0) {
+    // Penalty based on installment_amount
+    const penaltyAmount = (loan.installment_amount * loan.penalty_rate) / 100;
 
-        const penaltyMsg = `Dear ${loan.client_name}, a penalty of KES ${penaltyAmount} has been applied for defaulting your installment. Your new balance is KES ${loan.remaining_balance + penaltyAmount}.`;
+    await db.query(
+      `INSERT INTO penalties (loan_id, client_id, amount, reason)
+       VALUES ($1,$2,$3,$4)`,
+      [loan.id, loan.client_id, penaltyAmount, 'Installment defaulted']
+    );
 
-        await smsService.sendSms([loan.phone], penaltyMsg);
+    await db.query(
+      `UPDATE loans
+       SET penalties = penalties + $1,
+           remaining_balance = remaining_balance + $1,
+           status = 'overdue',
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [penaltyAmount, loan.id]
+    );
 
-        await db.query(
-          `INSERT INTO notifications (user_id, title, message, type, priority, related_entity, related_entity_type)
-           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-          [
-            loan.client_id,
-            'Loan Penalty Applied',
-            penaltyMsg,
-            'penalty',
-            'high',
-            loan.id.toString(),
-            'loan',
-          ]
-        );
-      }
-    }
+    const penaltyMsg = `Dear ${loan.client_name}, a penalty of KES ${penaltyAmount} has been applied for defaulting your installment. Your new balance is KES ${loan.remaining_balance + penaltyAmount}.`;
+
+    await smsService.sendSms([loan.phone], penaltyMsg);
+
+    await db.query(
+      `INSERT INTO notifications (user_id, title, message, type, priority, related_entity, related_entity_type)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        loan.client_id,
+        'Loan Penalty Applied',
+        penaltyMsg,
+        'penalty',
+        'high',
+        loan.id.toString(),
+        'loan',
+      ]
+    );
+  }
+}
+
+    
   } catch (err) {
     console.error('Error sending loan reminders/penalties:', err);
   }
