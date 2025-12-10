@@ -64,7 +64,7 @@ router.post('/:loanId/payment-start-date', async (req, res) => {
   }
 
   try {
-    await pool.query(
+    await db.query(
       `UPDATE loans
        SET payment_start_date = $1, updated_at = NOW()
        WHERE id = $2`,
