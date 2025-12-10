@@ -87,6 +87,6 @@ async function sendDailyLoanReminders() {
   }
 }
 
-cron.schedule('0 12 * * *', sendDailyLoanReminders);
+cron.schedule('0 0 * * *', sendDailyLoanReminders);
 
 module.exports = { sendDailyLoanReminders };
