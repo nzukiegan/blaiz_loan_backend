@@ -100,3 +100,20 @@ CREATE INDEX IF NOT EXISTS idx_payments_client_id ON payments(client_id);
 CREATE INDEX IF NOT EXISTS idx_penalties_loan_id ON penalties(loan_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+
+CREATE OR REPLACE FUNCTION clear_all_data()
+RETURNS void AS $$
+BEGIN
+   -- Truncate all tables (CASCADE ensures child tables are cleared)
+    TRUNCATE TABLE 
+        notifications,
+        penalties,
+        payments,
+        loans,
+        clients,
+        users
+        RESTART IDENTITY CASCADE;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT clear_all_data();
